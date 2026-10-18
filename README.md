@@ -53,6 +53,7 @@ This repository provides a mathematically exact, reverse-engineered solution tha
   * Only updates flash **Sector 15** (`STRATA_UPDATE 15`): **does not touch maps, radio coding, or firmware core**.
 
 * **⚡ Windows Drag-and-Drop Batch Files**:
+  * `start_web_studio.bat`: Launch the Next.js Web Studio with real-time RGB555 simulation in your browser with 1 click.
   * `create_bootable_iso.bat`: Drag any image file onto the batch script to produce an ISO in seconds.
   * `verify_logo_quality.bat`: Drag any image, `.fli`, or `.iso` to inspect for artifacts.
   * `decompile_view_iso.bat`: Drag an `.iso` file to launch the visual inspector.

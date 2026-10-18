@@ -54,6 +54,7 @@ Acest pachet rezolvă definitiv aceste probleme prin:
   * Scrie exclusiv în sectorul de memorie 15 (`STRATA_UPDATE 15`). **Nu atinge hărțile de navigație, codările radio (VCDS), sistemul de operare sau setările mașinii**.
 
 * **⚡ Fișiere Batch Rapide (Drag & Drop pentru Windows)**:
+  * `start_web_studio.bat`: Pornește aplicația web Next.js Studio în browser cu un dublu click.
   * `create_bootable_iso.bat`: Tragi o poză peste el și obții instant ISO-ul bootabil.
   * `verify_logo_quality.bat`: Tragi o poză, un `.fli` sau un `.iso` pentru o diagnoză completă în consolă.
   * `decompile_view_iso.bat`: Tragi un fișier `.iso` pentru a-l deschide în vizualizator.
