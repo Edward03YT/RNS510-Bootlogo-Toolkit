@@ -105,7 +105,7 @@ Imaginea este scanată de la stânga la dreapta, linie cu linie, de sus până j
 1. Asigură-te că ai instalat **Python 3.8** sau o versiune mai nouă de pe [python.org](https://www.python.org/downloads/) (Bifează căsuța *"Add Python to PATH"* la instalare).
 2. Descarcă sau clonează acest repository:
    ```bash
-   git clone https://github.com/your-username/RNS510-Bootlogo-Toolkit.git
+   git clone https://github.com/Edward03YT/RNS510-Bootlogo-Toolkit.git
    cd RNS510-Bootlogo-Toolkit
    ```
 3. Instalează modulele necesare rulând comanda:

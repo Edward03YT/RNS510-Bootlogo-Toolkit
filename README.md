@@ -106,7 +106,7 @@ Pixels are scanned left-to-right, row-by-row, from row 0 to row 479, totalling e
 1. Install **Python 3.8** or newer from [python.org](https://www.python.org/downloads/) (Make sure to check *"Add Python to PATH"* during Windows setup).
 2. Clone or download this repository:
    ```bash
-   git clone https://github.com/your-username/RNS510-Bootlogo-Toolkit.git
+   git clone https://github.com/Edward03YT/RNS510-Bootlogo-Toolkit.git
    cd RNS510-Bootlogo-Toolkit
    ```
 3. Install the required Python dependencies:
