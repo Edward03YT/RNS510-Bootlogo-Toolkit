@@ -6,11 +6,11 @@
 #DATE:2017-10-17
 
 #Project: VWRNS
-#Author: netdata
+#Author: Edward03
 #Steckbrief: C_EU_10.344_t190 C3/C4A/C5C/C6/C10
 
 #CommentStart:
-This is an unofficial SWL CD created by netdata. Use it at your own risk.
+This is an unofficial SWL CD created by Edward03. Use it at your own risk.
 Startup logo update only.
 
 #CommentEnd:
