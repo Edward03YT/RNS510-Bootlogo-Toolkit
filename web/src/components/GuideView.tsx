@@ -65,10 +65,10 @@ export const GuideView: React.FC<GuideViewProps> = ({ lang }) => {
             </p>
             <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 space-y-1">
               <div className="text-emerald-400 font-semibold">
-                ✓ Recomandat: CD-R Verbatim AZO (scriere la 4x sau 8x)
+                {t.guide.recCd}
               </div>
               <div className="text-rose-400 font-semibold">
-                ✗ Nu folosi: CD-RW (rescriabil), DVD-R, stick USB sau card SD
+                {t.guide.dontUse}
               </div>
             </div>
           </div>

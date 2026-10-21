@@ -16,10 +16,10 @@ import {
   Sun,
   Contrast,
   SlidersHorizontal,
-  Sparkles,
   ShieldCheck,
   Disc3,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 
 interface StudioViewProps {
@@ -40,7 +40,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
   const origCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Image Source
+  // Image Source - Starts EMPTY so nothing is corrupted or auto-persisted on refresh
   const [currentImageElement, setCurrentImageElement] = useState<HTMLImageElement | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
@@ -67,7 +67,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
   const [generationStep, setGenerationStep] = useState<number>(0);
   const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null);
 
-  // Load Preset if provided from Presets Tab
+  // Load Preset only when explicitly requested from Presets Tab
   useEffect(() => {
     if (presetSvgToLoad) {
       loadSvgStringToImage(presetSvgToLoad);
@@ -75,32 +75,18 @@ export const StudioView: React.FC<StudioViewProps> = ({
     }
   }, [presetSvgToLoad]);
 
-  // Default initial image: Default to Volkswagen R Performance badge on startup
-  useEffect(() => {
-    if (!currentImageElement && !presetSvgToLoad) {
-      // Default to high-res SVG preset on launch
-      import("@/lib/presets").then(({ PRESET_LOGOS }) => {
-        loadSvgStringToImage(PRESET_LOGOS[0].svgData);
-      });
-    }
-  }, []);
-
+  // Safe SVG loader using data URI (never revokes, never corrupts thumbnail)
   const loadSvgStringToImage = (svgString: string) => {
-    const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    const dataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgString);
     const img = new Image();
     img.onload = () => {
       setCurrentImageElement(img);
-      // Create a dummy file for generation
-      fetch(url)
-        .then((res) => res.blob())
-        .then((b) => {
-          const f = new File([b], "preset_logo.png", { type: "image/png" });
-          setCurrentFile(f);
-        });
-      URL.revokeObjectURL(url);
+      const f = new File([new Blob([svgString], { type: "image/svg+xml" })], "preset_badge.svg", {
+        type: "image/svg+xml",
+      });
+      setCurrentFile(f);
     };
-    img.src = url;
+    img.src = dataUrl;
   };
 
   const isImageFile = (file: File) => {
@@ -126,9 +112,37 @@ export const StudioView: React.FC<StudioViewProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleRemoveImage = () => {
+    setCurrentImageElement(null);
+    setCurrentFile(null);
+    setDiagnostics(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   // Re-run simulation whenever source image or adjustment options change
   useEffect(() => {
-    if (!currentImageElement || !simCanvasRef.current) return;
+    if (!simCanvasRef.current) return;
+
+    if (!currentImageElement) {
+      // Clear canvas when no image is loaded
+      const simTarget = simCanvasRef.current;
+      const simCtx = simTarget.getContext("2d");
+      if (simCtx) {
+        simCtx.fillStyle = "#000000";
+        simCtx.fillRect(0, 0, 800, 480);
+      }
+      if (origCanvasRef.current) {
+        const origCtx = origCanvasRef.current.getContext("2d");
+        if (origCtx) {
+          origCtx.fillStyle = "#000000";
+          origCtx.fillRect(0, 0, 800, 480);
+        }
+      }
+      setDiagnostics(null);
+      return;
+    }
 
     try {
       const res = simulateRns510Hardware(currentImageElement, {
@@ -166,7 +180,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
 
   // Handle ISO Generation via Next.js API
   const handleGenerateIso = async () => {
-    if (!simCanvasRef.current) return;
+    if (!simCanvasRef.current || !currentImageElement) return;
 
     setIsModalOpen(true);
     setIsGenerating(true);
@@ -179,8 +193,6 @@ export const StudioView: React.FC<StudioViewProps> = ({
     const timer3 = setTimeout(() => setGenerationStep(3), 1900);
 
     try {
-      // Convert the currently simulated/rendered canvas directly to PNG Blob!
-      // This ensures exact WYSIWYG matching with all brightness, contrast, rotation and fit adjustments!
       const canvasBlob = await new Promise<Blob | null>((resolve) => {
         simCanvasRef.current?.toBlob((b) => resolve(b), "image/png");
       });
@@ -201,7 +213,6 @@ export const StudioView: React.FC<StudioViewProps> = ({
       if (imgData) {
         const rle = encodeRgb555Rle(imgData.data, 800, 480, cleanBlack);
         const fliData = buildFliData(rle, 800, 480);
-        // Copy to standard Uint8Array buffer
         const fliBuffer = new Uint8Array(fliData);
         const fliBlob = new Blob([fliBuffer], { type: "application/octet-stream" });
         formData.append("fli", fliBlob, "LOGO.FLI");
@@ -227,7 +238,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
       setIsGenerating(false);
       setGenerationResult({
         success: false,
-        error: err.message || "Failed to generate ISO",
+        error: err.message || (lang === "ro" ? "Eroare la generarea fișierului ISO" : "Failed to generate ISO"),
       });
     }
   };
@@ -242,7 +253,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 animate-fade-in">
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8 animate-fade-in">
       {/* Top Head Unit / Screen Simulator */}
       <div className="w-full">
         <BezelSimulator
@@ -254,19 +265,21 @@ export const StudioView: React.FC<StudioViewProps> = ({
           onToggleCrtGrid={setShowCrtGrid}
           showBacklightGlow={showBacklightGlow}
           onToggleBacklightGlow={setShowBacklightGlow}
+          lang={lang}
+          hasImage={!!currentImageElement}
         />
       </div>
 
-      {/* Real-time Diagnostics Bar */}
+      {/* Real-time Diagnostics Bar (renders when image is loaded) */}
       <DiagnosticBadge diagnostics={diagnostics} lang={lang} />
 
       {/* Main Studio Controls Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Col 1: Image Upload & Dropzone */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-2 text-white font-bold text-sm mb-3">
-              <ImageIcon className="w-4 h-4 text-cyan-400" />
+              <ImageIcon className="w-4 h-4 text-cyan-400 shrink-0" />
               <span>{t.studio.selectFile}</span>
             </div>
 
@@ -285,7 +298,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 }
               }}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px] ${
+              className={`border-2 border-dashed rounded-xl p-5 sm:p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] ${
                 isDragOver
                   ? "border-blue-500 bg-blue-500/10"
                   : "border-slate-800 hover:border-slate-700 bg-slate-950/40 hover:bg-slate-950/70"
@@ -304,8 +317,8 @@ export const StudioView: React.FC<StudioViewProps> = ({
                   e.target.value = "";
                 }}
               />
-              <div className="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-3">
-                <Upload className="w-6 h-6" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-2 sm:mb-3">
+                <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <p className="text-xs font-semibold text-slate-200">
                 {t.studio.uploadTitle}
@@ -316,51 +329,62 @@ export const StudioView: React.FC<StudioViewProps> = ({
             </div>
           </div>
 
-          {/* Current File Preview Info */}
-          {currentFile && (
+          {/* Current File Preview Info - Safe rendering with delete button */}
+          {currentFile && currentImageElement && (
             <div className="mt-3 p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-black border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
-                  {currentImageElement ? (
-                    <img
-                      src={currentImageElement.src}
-                      alt="Source"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageIcon className="w-4 h-4 text-slate-500" />
-                  )}
+                <div className="w-9 h-9 rounded-lg bg-black border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center p-0.5">
+                  <img
+                    src={currentImageElement.src}
+                    alt="Source"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-slate-200 truncate">
                     {currentFile.name}
                   </p>
-                  <p className="text-[10px] text-emerald-400">
-                    {currentImageElement?.naturalWidth || 800} × {currentImageElement?.naturalHeight || 480} px
+                  <p className="text-[10px] text-emerald-400 font-mono">
+                    {currentImageElement.naturalWidth || 800} × {currentImageElement.naturalHeight || 480} px
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-cyan-400 hover:underline font-medium shrink-0 ml-2"
-              >
-                {t.studio.changeImage}
-              </button>
+              <div className="flex items-center space-x-2 shrink-0 ml-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                >
+                  {t.studio.changeImage}
+                </button>
+                <span className="text-slate-700">|</span>
+                <button
+                  onClick={handleRemoveImage}
+                  className="text-xs text-rose-400 hover:text-rose-300 font-medium flex items-center space-x-1"
+                  title={t.studio.removeImage}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{t.studio.removeImage}</span>
+                </button>
+              </div>
             </div>
           )}
 
           <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-            <span>Status:</span>
-            <span className="text-emerald-400 font-medium">
-              {currentFile ? "Imagine Încărcată pe Ecran ✓" : "Preset Activ"}
+            <span>{t.studio.statusLabel}</span>
+            <span className={`font-medium ${currentFile ? "text-emerald-400" : "text-slate-500"}`}>
+              {currentFile
+                ? currentFile.name.endsWith(".svg")
+                  ? t.studio.statusPresetLoaded
+                  : t.studio.statusFileLoaded
+                : t.studio.statusEmpty}
             </span>
           </div>
         </div>
 
         {/* Col 2: Image Sizing & Anti-Noise Filter */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4 sm:space-y-5">
           <div className="flex items-center space-x-2 text-white font-bold text-sm">
-            <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+            <SlidersHorizontal className="w-4 h-4 text-indigo-400 shrink-0" />
             <span>{t.studio.controlsTitle}</span>
           </div>
 
@@ -374,17 +398,17 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 <button
                   key={mode}
                   onClick={() => setFitMode(mode)}
-                  className={`py-2 px-2 rounded-lg font-medium capitalize border transition-all text-center ${
+                  className={`py-2 px-1.5 rounded-lg font-medium border transition-all text-center text-[11px] sm:text-xs ${
                     fitMode === mode
-                      ? "bg-blue-600 border-blue-500 text-white shadow-sm shadow-blue-500/30"
+                      ? "bg-blue-600 border-blue-500 text-white shadow-sm shadow-blue-500/30 font-semibold"
                       : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white"
                   }`}
                 >
                   {mode === "pad"
-                    ? "Pad (000 Bars)"
+                    ? t.studio.fitPad
                     : mode === "crop"
-                    ? "Crop & Fill"
-                    : "Stretch"}
+                    ? t.studio.fitCrop
+                    : t.studio.fitStretch}
                 </button>
               ))}
             </div>
@@ -394,7 +418,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
           <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-bold text-emerald-400 flex items-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                 <span>{t.studio.antiNoiseLabel}</span>
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -414,18 +438,18 @@ export const StudioView: React.FC<StudioViewProps> = ({
         </div>
 
         {/* Col 3: Visual Adjustments & Generate Button */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-white font-bold text-sm">
-                Fine-Tuning Adjustments
+                {t.studio.fineTuning}
               </span>
               <button
                 onClick={handleResetAdjustments}
                 className="text-[11px] text-slate-400 hover:text-white flex items-center space-x-1"
-                title="Reset all sliders"
+                title={t.studio.resetAdjustments}
               >
-                <RefreshCw className="w-3 h-3" />
+                <RefreshCw className="w-3 h-3 shrink-0" />
                 <span>{t.studio.resetAdjustments}</span>
               </button>
             </div>
@@ -434,7 +458,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
             <div>
               <div className="flex justify-between text-xs text-slate-300 mb-1">
                 <span className="flex items-center space-x-1">
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{t.studio.brightness}</span>
                 </span>
                 <span className="font-mono text-slate-400">{brightness > 0 ? `+${brightness}` : brightness}%</span>
@@ -445,7 +469,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 max="50"
                 value={brightness}
                 onChange={(e) => setBrightness(parseInt(e.target.value))}
-                className="w-full accent-blue-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                className="w-full accent-blue-500 bg-slate-800 h-2 rounded-lg appearance-none cursor-pointer"
               />
             </div>
 
@@ -453,7 +477,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
             <div>
               <div className="flex justify-between text-xs text-slate-300 mb-1">
                 <span className="flex items-center space-x-1">
-                  <Contrast className="w-3.5 h-3.5 text-cyan-400" />
+                  <Contrast className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                   <span>{t.studio.contrast}</span>
                 </span>
                 <span className="font-mono text-slate-400">{contrast > 0 ? `+${contrast}` : contrast}%</span>
@@ -464,7 +488,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 max="50"
                 value={contrast}
                 onChange={(e) => setContrast(parseInt(e.target.value))}
-                className="w-full accent-blue-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer"
+                className="w-full accent-blue-500 bg-slate-800 h-2 rounded-lg appearance-none cursor-pointer"
               />
             </div>
 
@@ -472,36 +496,45 @@ export const StudioView: React.FC<StudioViewProps> = ({
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                className="flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all"
+                className="flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-all active:scale-95"
               >
-                <RotateCw className="w-3.5 h-3.5 text-blue-400" />
+                <RotateCw className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span>{t.studio.rotate} ({rotation}°)</span>
               </button>
 
               <button
                 onClick={() => setFlipH(!flipH)}
-                className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                className={`flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl border text-xs font-medium transition-all active:scale-95 ${
                   flipH
-                    ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
+                    ? "bg-blue-600/20 border-blue-500/40 text-blue-300 font-semibold"
                     : "bg-slate-950/60 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                <FlipHorizontal className="w-3.5 h-3.5 text-blue-400" />
+                <FlipHorizontal className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 <span>{t.studio.flipH}</span>
               </button>
             </div>
           </div>
 
           {/* GENERATE ISO BUTTON */}
-          <div className="pt-4">
+          <div className="pt-4 sm:pt-6">
             <button
               onClick={handleGenerateIso}
-              disabled={isGenerating}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:via-indigo-500 hover:to-cyan-400 font-extrabold text-sm sm:text-base text-white shadow-xl shadow-blue-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-2.5 cursor-pointer"
+              disabled={isGenerating || !currentImageElement}
+              className={`w-full py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl font-extrabold text-sm sm:text-base text-white shadow-xl transition-all flex items-center justify-center space-x-2.5 ${
+                !currentImageElement
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed opacity-60 shadow-none border border-slate-700"
+                  : "bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:via-indigo-500 hover:to-cyan-400 shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              }`}
             >
-              <Disc3 className="w-5 h-5 text-white animate-spin-slow" />
+              <Disc3 className={`w-5 h-5 text-white ${isGenerating ? "animate-spin" : "animate-spin-slow"} shrink-0`} />
               <span>{t.studio.generateBtn}</span>
             </button>
+            {!currentImageElement && (
+              <p className="text-[11px] text-slate-500 text-center mt-2">
+                {t.studio.noImageToGenerate}
+              </p>
+            )}
           </div>
         </div>
       </div>

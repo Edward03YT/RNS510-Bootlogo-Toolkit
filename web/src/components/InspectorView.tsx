@@ -112,7 +112,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
           {t.inspector.uploadDrop}
         </h3>
         <p className="text-xs text-slate-400 max-w-md">
-          {t.inspector.selectFile} (.iso boot CD, LOGO.FLI, or extracted PNG)
+          {t.inspector.selectFile} {t.inspector.fileTypesHint}
         </p>
 
         {selectedFileName && (
@@ -130,7 +130,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
             {t.inspector.analyzing}
           </h4>
           <p className="text-xs text-slate-400 mt-1">
-            Validating 384,000 pixels, bit 15 parity, CRC-16 checksums and ISO 9660 table...
+            {t.inspector.analyzingSub}
           </p>
         </div>
       )}
@@ -207,7 +207,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
                       result.magicValid ? "text-emerald-400" : "text-rose-400"
                     }`}
                   >
-                    {result.magicValid ? "0xAA55AA55 (VALID)" : "CORRUPTED"}
+                    {result.magicValid ? t.inspector.magicValid : t.inspector.corrupted}
                   </span>
                 </div>
 
@@ -241,7 +241,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
                         result.ecuInfo.crc_valid ? "text-emerald-400" : "text-rose-400"
                       }`}
                     >
-                      {result.ecuInfo.crc_file} ({result.ecuInfo.crc_valid ? "VALID" : "MISMATCH"})
+                      {result.ecuInfo.crc_file} ({result.ecuInfo.crc_valid ? t.inspector.statusValid : t.inspector.statusMismatch})
                     </span>
                   </div>
                 )}
@@ -273,7 +273,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
             {/* Right Col: Extracted Hardware Screen Preview */}
             <div className="lg:col-span-6 space-y-3">
               <h4 className="font-bold text-sm text-white border-b border-slate-800 pb-2">
-                Decoded RNS 510 Screen View
+                {t.inspector.decodedScreenTitle}
               </h4>
 
               {result.previewUrl && (
@@ -284,7 +284,7 @@ export const InspectorView: React.FC<InspectorViewProps> = ({
                     className="w-full h-full object-contain"
                   />
                   <div className="absolute bottom-2 right-2 px-2 py-1 bg-slate-900/80 backdrop-blur rounded text-[10px] font-mono text-cyan-400 border border-slate-800">
-                    800 × 480 Native
+                    {t.inspector.nativeRes}
                   </div>
                 </div>
               )}

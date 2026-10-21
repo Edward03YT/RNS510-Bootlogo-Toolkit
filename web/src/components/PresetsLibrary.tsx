@@ -58,13 +58,13 @@ export const PresetsLibrary: React.FC<PresetsLibraryProps> = ({
           <div className="lg:col-span-5 space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Badge / Car Model Text
+                {t.presets.badgeTextLabel}
               </label>
               <input
                 type="text"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                placeholder="e.g. PASSAT B7, GOLF 6 GTI, RNS 510"
+                placeholder={t.presets.badgeTextPlaceholder}
                 maxLength={22}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-blue-500"
               />
@@ -72,13 +72,13 @@ export const PresetsLibrary: React.FC<PresetsLibraryProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Subtitle / Slogan
+                {t.presets.sloganLabel}
               </label>
               <input
                 type="text"
                 value={customSub}
                 onChange={(e) => setCustomSub(e.target.value)}
-                placeholder="e.g. 4MOTION PERFORMANCE, EDITION 35"
+                placeholder={t.presets.sloganPlaceholder}
                 maxLength={32}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white font-mono text-sm focus:outline-none focus:border-blue-500"
               />
