@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { Language } from "@/types";
+import { Language, NavTab } from "@/types";
 import { translations } from "@/lib/translations";
-import { Disc3, Sliders, ShieldCheck, BookOpen, Sparkles, Globe, ArrowLeftRight } from "lucide-react";
+import { Disc3, Sliders, ShieldCheck, BookOpen, Sparkles, Globe, ArrowLeftRight, Map } from "lucide-react";
 
 interface HeaderProps {
-  currentTab: "studio" | "presets" | "inspector" | "compare" | "guide";
-  onTabChange: (tab: "studio" | "presets" | "inspector" | "compare" | "guide") => void;
+  currentTab: NavTab;
+  onTabChange: (tab: NavTab) => void;
   lang: Language;
   onLangChange: (lang: Language) => void;
 }
@@ -131,6 +131,19 @@ export const Header: React.FC<HeaderProps> = ({
               <ArrowLeftRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden xl:inline">{t.tabs.compare}</span>
               <span className="xl:hidden">{t.tabs.compareShort}</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange("mapverify")}
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 ${
+                currentTab === "mapverify"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xl:inline">{t.tabs.mapverify}</span>
+              <span className="xl:hidden">{t.tabs.mapverifyShort}</span>
             </button>
 
             <button

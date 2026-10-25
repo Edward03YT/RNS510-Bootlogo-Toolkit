@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import { Language } from "@/types";
+import { Language, NavTab } from "@/types";
 import { Header } from "@/components/Header";
 import { StudioView } from "@/components/StudioView";
 import { PresetsLibrary } from "@/components/PresetsLibrary";
 import { InspectorView } from "@/components/InspectorView";
 import { CompareView } from "@/components/CompareView";
+import { MapVerifyView } from "@/components/MapVerifyView";
 import { GuideView } from "@/components/GuideView";
 import { translations } from "@/lib/translations";
 import { Heart, Disc3 } from "lucide-react";
 
 export default function Home() {
-  const [currentTab, setCurrentTab] = useState<"studio" | "presets" | "inspector" | "compare" | "guide">("studio");
+  const [currentTab, setCurrentTab] = useState<NavTab>("studio");
   const [lang, setLang] = useState<Language>("ro");
   const [selectedPresetSvg, setSelectedPresetSvg] = useState<string | null>(null);
 
@@ -74,6 +75,10 @@ export default function Home() {
             lang={lang}
             onSendToStudio={handleFixInStudio}
           />
+        )}
+
+        {currentTab === "mapverify" && (
+          <MapVerifyView lang={lang} />
         )}
 
         {currentTab === "guide" && (
