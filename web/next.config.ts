@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./template_swl/**/*", "./public/template_swl/**/*"],
+  },
   turbopack: {
     rules: {
       "*.css": {

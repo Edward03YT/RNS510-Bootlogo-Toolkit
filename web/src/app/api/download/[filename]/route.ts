@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
-import fs from "fs/promises";
-import { existsSync } from "fs";
-
+import { getGeneratedFile } from "@/lib/storage";
 
 export async function GET(
   req: NextRequest,
@@ -11,25 +9,18 @@ export async function GET(
   try {
     const { filename } = await params;
     const safeFilename = path.basename(filename);
-    const filePath = path.join(process.cwd(), "public", "generated", safeFilename);
 
-    if (!existsSync(filePath)) {
+    const file = await getGeneratedFile(safeFilename);
+    if (!file) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    const fileBuffer = await fs.readFile(filePath);
-
-    let contentType = "application/octet-stream";
-    if (safeFilename.endsWith(".png")) contentType = "image/png";
-    else if (safeFilename.endsWith(".iso")) contentType = "application/x-iso9660-image";
-    else if (safeFilename.endsWith(".fli")) contentType = "application/octet-stream";
-
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(file.buffer as any, {
       status: 200,
       headers: {
         "Content-Disposition": `attachment; filename="${safeFilename}"`,
-        "Content-Type": contentType,
-        "Content-Length": fileBuffer.length.toString(),
+        "Content-Type": file.contentType,
+        "Content-Length": file.buffer.length.toString(),
         "Cache-Control": "no-cache",
       },
     });

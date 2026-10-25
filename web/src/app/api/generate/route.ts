@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import { buildBootableIsoNative } from "@/lib/rns510Server";
+import { saveGeneratedFile, getWritableStorageDir } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,20 +21,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare temporary and output directories
-    const rootDir = path.resolve(process.cwd(), "..");
-    const bridgeScript = path.join(rootDir, "web_bridge.py");
-    const outDir = path.join(process.cwd(), "public", "generated");
-    const uploadsDir = path.join(outDir, "uploads");
-
-    await fs.mkdir(uploadsDir, { recursive: true });
-
     const timestamp = Date.now();
     const baseName = imageFile
       ? imageFile.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_")
       : "custom_bootlogo";
 
-    // Fallback native function for Vercel / serverless when Python is not available
+    // Fallback native TypeScript generation for Vercel / serverless (no Python needed)
     const runNativeFallback = async () => {
       let fliBytes: Uint8Array;
       if (fliFile) {
@@ -48,13 +41,12 @@ export async function POST(req: NextRequest) {
       const fliFileName = `${baseName}_${timestamp}_LOGO.FLI`;
       const previewFileName = `${baseName}_${timestamp}_PREVIEW.png`;
 
-      await fs.writeFile(path.join(outDir, isoFileName), res.isoBytes);
-      await fs.writeFile(path.join(outDir, fliFileName), fliBytes);
+      await saveGeneratedFile(isoFileName, res.isoBytes, "application/x-iso9660-image");
+      await saveGeneratedFile(fliFileName, fliBytes, "application/octet-stream");
 
-      // If client provided preview image, save it too
       if (imageFile) {
         const imgBuffer = Buffer.from(await imageFile.arrayBuffer());
-        await fs.writeFile(path.join(outDir, previewFileName), imgBuffer);
+        await saveGeneratedFile(previewFileName, imgBuffer, "image/png");
       }
 
       return {
@@ -76,13 +68,24 @@ export async function POST(req: NextRequest) {
       };
     };
 
+    const rootDir = path.resolve(process.cwd(), "..");
+    const bridgeScript = path.join(rootDir, "web_bridge.py");
+
     // If running in Vercel or bridge script doesn't exist, use native fallback directly
     if (process.env.VERCEL || !existsSync(bridgeScript)) {
       const nativeRes = await runNativeFallback();
       return NextResponse.json(nativeRes);
     }
 
-    // On local machine, try Python bridge first
+    // On local machine with Python available, try Python bridge first
+    const storageDir = getWritableStorageDir();
+    const uploadsDir = path.join(storageDir, "uploads");
+    try {
+      await fs.mkdir(uploadsDir, { recursive: true });
+    } catch {
+      // Ignore
+    }
+
     const buffer = Buffer.from(await (imageFile || fliFile)!.arrayBuffer());
     const safeName = (imageFile || fliFile)!.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "input.png";
     const tempInputPath = path.join(uploadsDir, `${timestamp}_${safeName}`);
@@ -99,7 +102,7 @@ export async function POST(req: NextRequest) {
       "--fit",
       fitMode,
       "--out-dir",
-      outDir,
+      storageDir,
     ];
 
     if (!cleanBlack) {
@@ -167,6 +170,26 @@ export async function POST(req: NextRequest) {
     // If Python succeeded:
     if (result.success && result.data?.success) {
       const d = result.data;
+
+      // Index files in memoryStore for /api/download
+      try {
+        const isoP = path.join(storageDir, d.iso_file);
+        if (existsSync(isoP)) {
+          const isoB = await fs.readFile(isoP);
+          await saveGeneratedFile(d.iso_file, isoB, "application/x-iso9660-image");
+        }
+        const fliP = path.join(storageDir, d.fli_file);
+        if (existsSync(fliP)) {
+          const fliB = await fs.readFile(fliP);
+          await saveGeneratedFile(d.fli_file, fliB, "application/octet-stream");
+        }
+        const prevP = path.join(storageDir, d.preview_file);
+        if (existsSync(prevP)) {
+          const prevB = await fs.readFile(prevP);
+          await saveGeneratedFile(d.preview_file, prevB, "image/png");
+        }
+      } catch {}
+
       return NextResponse.json({
         success: true,
         isoFile: d.iso_file,

@@ -5,14 +5,23 @@ import { buildIso9660, IsoFile } from "./iso9660";
 import { crc16Xmodem } from "./rns510Core";
 
 export async function findTemplateDir(): Promise<string> {
-  const localTpl = path.join(process.cwd(), "template_swl");
-  if (existsSync(localTpl)) {
-    return localTpl;
-  }
+  const candidates = [
+    path.join(process.cwd(), "public", "template_swl"),
+    path.join(process.cwd(), "template_swl"),
+    path.resolve(process.cwd(), "..", "template_swl"),
+    path.join(process.cwd(), "web", "public", "template_swl"),
+    path.join(process.cwd(), "web", "template_swl"),
+  ];
 
-  const parentTpl = path.resolve(process.cwd(), "..", "template_swl");
-  if (existsSync(parentTpl)) {
-    return parentTpl;
+  for (const c of candidates) {
+    if (
+      existsSync(/*turbopackIgnore: true*/ c) &&
+      existsSync(/*turbopackIgnore: true*/ path.join(c, "BLSCRIPT.CFG")) &&
+      existsSync(/*turbopackIgnore: true*/ path.join(c, "VERSION.TXT")) &&
+      existsSync(/*turbopackIgnore: true*/ path.join(c, "SWL", "SILVER_1", "RNSMIDEC", "SWL", "SWL.FLI"))
+    ) {
+      return c;
+    }
   }
 
   throw new Error("Could not find template_swl directory with required files");
