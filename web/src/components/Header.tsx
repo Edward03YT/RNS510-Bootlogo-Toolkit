@@ -3,11 +3,11 @@
 import React from "react";
 import { Language } from "@/types";
 import { translations } from "@/lib/translations";
-import { Disc3, Sliders, ShieldCheck, BookOpen, Sparkles, Globe } from "lucide-react";
+import { Disc3, Sliders, ShieldCheck, BookOpen, Sparkles, Globe, ArrowLeftRight } from "lucide-react";
 
 interface HeaderProps {
-  currentTab: "studio" | "presets" | "inspector" | "guide";
-  onTabChange: (tab: "studio" | "presets" | "inspector" | "guide") => void;
+  currentTab: "studio" | "presets" | "inspector" | "compare" | "guide";
+  onTabChange: (tab: "studio" | "presets" | "inspector" | "compare" | "guide") => void;
   lang: Language;
   onLangChange: (lang: Language) => void;
 }
@@ -90,8 +90,8 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.tabs.studio}</span>
-              <span className="sm:hidden">{t.tabs.studioShort}</span>
+              <span className="hidden xl:inline">{t.tabs.studio}</span>
+              <span className="xl:hidden">{t.tabs.studioShort}</span>
             </button>
 
             <button
@@ -103,8 +103,8 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.tabs.presets}</span>
-              <span className="sm:hidden">{t.tabs.presetsShort}</span>
+              <span className="hidden xl:inline">{t.tabs.presets}</span>
+              <span className="xl:hidden">{t.tabs.presetsShort}</span>
             </button>
 
             <button
@@ -116,8 +116,21 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.tabs.inspector}</span>
-              <span className="sm:hidden">{t.tabs.inspectorShort}</span>
+              <span className="hidden xl:inline">{t.tabs.inspector}</span>
+              <span className="xl:hidden">{t.tabs.inspectorShort}</span>
+            </button>
+
+            <button
+              onClick={() => onTabChange("compare")}
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all shrink-0 ${
+                currentTab === "compare"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+              }`}
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden xl:inline">{t.tabs.compare}</span>
+              <span className="xl:hidden">{t.tabs.compareShort}</span>
             </button>
 
             <button
@@ -129,8 +142,8 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{t.tabs.guide}</span>
-              <span className="sm:hidden">{t.tabs.guideShort}</span>
+              <span className="hidden xl:inline">{t.tabs.guide}</span>
+              <span className="xl:hidden">{t.tabs.guideShort}</span>
             </button>
           </nav>
 

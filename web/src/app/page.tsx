@@ -6,12 +6,13 @@ import { Header } from "@/components/Header";
 import { StudioView } from "@/components/StudioView";
 import { PresetsLibrary } from "@/components/PresetsLibrary";
 import { InspectorView } from "@/components/InspectorView";
+import { CompareView } from "@/components/CompareView";
 import { GuideView } from "@/components/GuideView";
 import { translations } from "@/lib/translations";
 import { Heart, Disc3 } from "lucide-react";
 
 export default function Home() {
-  const [currentTab, setCurrentTab] = useState<"studio" | "presets" | "inspector" | "guide">("studio");
+  const [currentTab, setCurrentTab] = useState<"studio" | "presets" | "inspector" | "compare" | "guide">("studio");
   const [lang, setLang] = useState<Language>("ro");
   const [selectedPresetSvg, setSelectedPresetSvg] = useState<string | null>(null);
 
@@ -22,7 +23,7 @@ export default function Home() {
     setCurrentTab("studio");
   };
 
-  const handleFixInStudio = (imageUrl: string) => {
+  const handleFixInStudio = (imageUrl?: string) => {
     // Switch to studio tab
     setCurrentTab("studio");
   };
@@ -65,6 +66,13 @@ export default function Home() {
           <InspectorView
             lang={lang}
             onFixInStudio={handleFixInStudio}
+          />
+        )}
+
+        {currentTab === "compare" && (
+          <CompareView
+            lang={lang}
+            onSendToStudio={handleFixInStudio}
           />
         )}
 

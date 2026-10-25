@@ -71,3 +71,5 @@ export interface PresetLogo {
   brand: "vw" | "gti" | "rline" | "skoda" | "seat" | "custom";
   svgData: string;
 }
+
+export type { IsoAnalysis, IsoCompareResult } from "@/lib/isoParser";
