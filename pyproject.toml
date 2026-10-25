@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rns510-bootlogo-toolkit"
+version = "0.1.0"
+description = "RNS 510 Bootlogo Toolkit and Map Source Verifier"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-3.0-or-later" }
+authors = [
+    { name = "Edward03YT" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "Pillow>=9.0.0",
+    "pycdlib>=1.12.0",
+]
+
+[project.optional-dependencies]
+7z = [
+    "py7zr>=0.20.0",
+]
+test = [
+    "pytest>=7.0.0",
+]
+
+[project.scripts]
+map-verify = "mapverify.cli:main"

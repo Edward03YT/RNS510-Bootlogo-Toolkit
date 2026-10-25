@@ -1,2 +1,3 @@
 Pillow>=9.0.0
 pycdlib>=1.12.0
+# Optional: pip install ".[7z]" or pip install py7zr>=0.20.0 for .7z archive verification

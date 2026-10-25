@@ -53,7 +53,14 @@ Acest pachet rezolvă definitiv aceste probleme prin:
   * Calculează automat suma `CRC-16/XMODEM` pentru `ECUORDER.TXT` și creează fișierul `CRC.16`.
   * Scrie exclusiv în sectorul de memorie 15 (`STRATA_UPDATE 15`). **Nu atinge hărțile de navigație, codările radio (VCDS), sistemul de operare sau setările mașinii**.
 
+* **🗺️ Verificator Surse Hărți RNS 510 (`verify_map.bat`, `map_verify.py`, `mapverify/`)**:
+  * Utilitar complet de verificare pre-instalare pentru sursele de actualizare a hărților de navigație RNS 510.
+  * Verifică foldere, carduri SD, imagini ISO și arhive descărcate *înainte* de a pierde peste o oră cu instalarea în mașină.
+  * Detectează fișiere lipsă sau trunchiate, limite FAT32 de 4 GiB, coliziuni de nume, erori ISO și carduri SD contrafăcute.
+  * Interfață grafică modernă Tkinter (mod întunecat) și linie de comandă completă cu raportare bilingvă (Română / Engleză).
+
 * **⚡ Fișiere Batch Rapide (Drag & Drop pentru Windows)**:
+  * `verify_map.bat`: Tragi orice folder de hărți, imagine ISO, arhivă sau manifest pentru a lansa interfața grafică a verificatorului.
   * `start_web_studio.bat`: Pornește aplicația web Next.js Studio în browser cu un dublu click.
   * `create_bootable_iso.bat`: Tragi o poză peste el și obții instant ISO-ul bootabil.
   * `verify_logo_quality.bat`: Tragi o poză, un `.fli` sau un `.iso` pentru o diagnoză completă în consolă.
@@ -197,17 +204,142 @@ python rns510_bootlogo.py bootlogo.iso --verify
 
 ---
 
+## 🗺️ Verificator Surse Hărți RNS 510 (Diagnoză Pre-Instalare)
+
+### 0. Domeniu de Aplicare și Limite Operaționale Oneste
+
+> [!IMPORTANT]
+> **Ce POATE și ce NU POATE face acest utilitar:**
+> 1. **Limitarea Mediului Intern**: Unitatea Volkswagen RNS 510 instalează hărțile de navigație pe **unitatea internă de stocare (HDD sau SSD)** aflată în bordul mașinii. Acest utilitar **nu poate** citi, accesa sau verifica conținutul stocat în interiorul aparatului. El verifică strict **mediul sursă** (card SD, folder pe PC, imagine ISO, arhivă descărcată) *înainte* de a pierde peste o oră cu instalarea în mașină.
+> 2. **Manifeste de Referință**: În absența unui manifest criptografic de referință provenit dintr-o instalare validată, utilitarul nu poate garanta că un folder oarecare este complet funcțional sau compatibil cu versiunea ta de firmware.
+> 3. **Drepturi de Autor**: Acest depozit **nu conține și nu distribuie fișiere de hărți piratate sau binare proprietare Volkswagen**.
+> 4. **Protecția Datelor Personale**: Toate rapoartele generate (consolă, Markdown, JSON) maschează automat căile conturilor de utilizator, folderele personale și directoarele temporare.
+
+---
+
+### 🚀 Ghid Rapid de Utilizare
+
+#### Opțiunea A: Lansator Windows Drag-and-Drop
+Apasă dublu-click pe `verify_map.bat` sau trage orice folder de hărți, fișier imagine `.iso`, arhivă (`.zip`/`.7z`) sau fișier manifest `.json` peste `verify_map.bat` pentru a porni interfața grafică în mod întunecat.
+
+#### Opțiunea B: Interfață Grafică din Linie de Comandă
+```bash
+python map_verify.py gui
+# Sau cu deschidere directă a unei căi:
+python map_verify.py gui "D:\RNS510_Harti"
+```
+
+#### Opțiunea C: Linia de Comandă (CLI)
+CLI-ul pune la dispoziție subcomenzi cu coduri de ieșire standardizate (`0` = OK, `1` = Probleme, `2` = Eroare) și suport bilingv (`--lang ro` sau `--lang en`):
+
+```bash
+# Recunoaștere a structurii și calcul amprentă digitală:
+python map_verify.py recon "D:\RNS510_Harti" --depth 3 --json recon.json --md recon.md
+
+# Generare manifest SHA-256 pentru un folder curat de referință:
+python map_verify.py manifest "D:\Harti_Curate" -o harti_v17.json --algo sha256
+
+# Verificare a unei copii (ex: pe un card SD) pe baza manifestului:
+python map_verify.py verify "E:\SD_Harti" --manifest harti_v17.json
+
+# Comparare directă folder-la-folder cu avertizare cache dispozitiv:
+python map_verify.py compare "D:\Harti_Curate" "E:\SD_Harti"
+
+# Scanare a extinderilor ISO fără dezarhivare pe disc:
+python map_verify.py iso "harti.iso" --against "D:\Harti_Curate"
+
+# Verificare hash fișier individual cu autodetecție algoritm:
+python map_verify.py hash-file "harti.iso" --expect "a1b2c3..."
+
+# Testare CRC intern al membrilor unei arhive fără extragere pe disc:
+python map_verify.py archive-test "harti.zip"
+
+# Testare capacitate reală card SD pentru detectarea memoriilor contrafăcute:
+python map_verify.py card-test "E:\" --percent 90
+```
+
+---
+
+### 📋 Structura JSON a Manifestului și Rapoartelor
+
+Manifestele și rapoartele produse respectă un format JSON determinist și ușor de comparat (diff-friendly):
+
+```json
+{
+  "tool": "mapverify",
+  "version": "0.1.0",
+  "created": "2026-10-25T20:30:00Z",
+  "algo": "sha256",
+  "root_name": "RNS510_Harti",
+  "total_files": 420,
+  "total_bytes": 6248921088,
+  "files": {
+    "MAPS/MAP1.DAT": {
+      "size": 2147483648,
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
+```
+
+---
+
+### 🚦 Coduri de Ieșire Standardizate
+
+| Cod Ieșire | Semnificație | Detalii |
+|:----------:|:-------------|:--------|
+| `0` | **EXIT_OK** | Rulare fără probleme. Toate sumele corespund, arhivele sunt integre, structurile sunt identice. |
+| `1` | **EXIT_PROBLEMS** | Probleme detectate: fișiere corupte/trunchiate, fișiere lipsă, diferențe hash sau blocuri SD defecte. |
+| `2` | **EXIT_ERROR** | Eroare fatală: cale inexistentă, permisiuni refuzate sau parametri invalizi. |
+
+---
+
 ## 📂 Structura Fișierelor din Repository
 
 ```text
 RNS510-Bootlogo-Toolkit/
+│
+├── map_verify.py              # Punct de intrare CLI și GUI pentru Verificatorul de Hărți
+├── verify_map.bat             # Lansator Windows Drag-and-Drop pentru Verificatorul de Hărți
+├── pyproject.toml             # Configurare pachet și dependențe opționale [7z]
+├── requirements.txt           # Dependențe de bază Python (Pillow, pycdlib)
+│
+├── mapverify/                 # Nucleul Verificatorului de Surse Hărți
+│   ├── __init__.py            # Inițializare pachet
+│   ├── __main__.py            # Punct de rulare modulară python -m mapverify
+│   ├── common.py              # Normalizare căi, mascare confidențialitate, constante
+│   ├── hashing.py             # Motor de streaming chunk 4 MiB și autodetecție hash
+│   ├── i18n.py                # Traduceri bilingve (Română implicit, Engleză)
+│   ├── recon.py               # Recunoaștere structură și euristici FAT32/ISO
+│   ├── manifest.py            # Generator multithreaded de manifeste JSON
+│   ├── verify.py              # Motor de verificare comparativă pe bază de manifest
+│   ├── compare.py             # Comparare directă arbore-la-arbore și notificare eject
+│   ├── archives.py            # Testare CRC în memorie fără dezarhivare (.zip, .7z)
+│   ├── isoscan.py             # Scaner extinderi ISO9660/Joliet/UDF prin pycdlib
+│   ├── cardtest.py            # Test capacitate reală card SD cu blocuri sintetice
+│   ├── report.py              # Generare rapoarte consolă, Markdown și JSON
+│   ├── cli.py                 # Punct de comandă CLI cu subcomenzi argparse
+│   └── gui.py                 # Interfață grafică Tkinter completă în mod întunecat
+│
+├── tests/                     # Suită automată de teste pytest (66+ teste)
+│   ├── test_archives.py       # Teste integritate arhive
+│   ├── test_cardtest.py       # Teste capacitate card SD cu CardTestIO sintetic
+│   ├── test_cli.py            # Teste parsare și execuție CLI
+│   ├── test_common.py         # Teste protecție confidențialitate și căi
+│   ├── test_compare.py        # Teste comparare foldere și case-folding
+│   ├── test_gui.py            # Teste inițializare GUI și rutare automată
+│   ├── test_hash_file.py      # Teste hash fișier individual și autodetecție
+│   ├── test_hashing.py        # Teste streaming hashing pe blocuri
+│   ├── test_isoscan.py        # Teste scanare ISO și detectare trunchiere
+│   ├── test_manifest_verify.py# Teste generare și validare manifest
+│   ├── test_recon.py          # Teste recunoaștere structură și alerte
+│   └── test_report.py         # Teste generare bilingvă rapoarte
 │
 ├── rns510_bootlogo.py         # Scriptul principal: Conversie imagine -> RGB555 FLI -> Creare ISO
 ├── rns510_iso_viewer.py       # Decompilator ISO & Vizualizator diagnostic de calitate
 ├── create_bootable_iso.bat    # Fișier Windows Drag-and-Drop / Dublu-click pentru creare ISO
 ├── verify_logo_quality.bat    # Fișier Windows Drag-and-Drop pentru scanare artefacte și purici verzi
 ├── decompile_view_iso.bat     # Fișier Windows Drag-and-Drop pentru vizualizare ISO
-├── requirements.txt           # Dependențele Python (Pillow, pycdlib)
 ├── LICENSE                    # Licența GNU General Public License v3.0
 ├── README.md                  # Documentația completă în limba Engleză
 ├── README_RO.md               # Acest ghid în limba Română
